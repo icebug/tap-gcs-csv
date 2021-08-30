@@ -10,6 +10,7 @@ setup(name='tap-gcs-csv',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_gcs_csv'],
       install_requires=[
+          'pytz>=2021.1',
           'singer-python==1.5.0',
           'voluptuous==0.10.5',
           'google-cloud-storage==1.42.0',

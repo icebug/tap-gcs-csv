@@ -46,7 +46,7 @@ def sync_table(config, state, table_spec):
     singer.write_schema(table_name, schema, key_properties=table_spec['key_properties'])
 
     records_streamed = 0
-    for blob in gcs.get_files_for_table(config, table_spec, last_updated):
+    for blob in gcs.get_files_for_table(config, table_spec, last_updated=last_updated):
         records_streamed += sync_table_file(config, blob, table_spec, schema)
 
         if blob.updated:
@@ -69,15 +69,14 @@ def sync_table_file(config, blob, table_spec, schema):
 
     for row in iterator:
         metadata = {
-            '_gcs_source_bucket': bucket,
-            '_gcs_source_file': s3_file,
-
+            '_gcs_source_bucket': blob.bucket.name,
+            '_gcs_source_file': blob.name,
             # index zero, +1 for header row
             '_gcs_source_lineno': records_synced + 2
         }
 
         record = {**conversion.convert_row(row, schema), **metadata}
-        singer.write_record(table_name, record)
+        singer.write_record(table_spec['name'], record)
         records_synced += 1
 
     return records_synced
@@ -86,7 +85,7 @@ def sync_table_file(config, blob, table_spec, schema):
 def do_sync(args):
     logger.info('Starting sync.')
 
-    config = tap_gs_csv.config.load(args.config)
+    config = tap_gcs_csv.config.load(args.config)
     state = load_state(args.state)
 
     for table in config['tables']:
