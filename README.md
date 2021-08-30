@@ -1,13 +1,15 @@
-# tap-s3-csv
-Author: Connor McArthur (connor@fishtownanalytics.com)
+# tap-gcs-csv
 
-[![CircleCI](https://circleci.com/gh/fishtown-analytics/tap-s3-csv/tree/master.svg?style=shield)](https://circleci.com/gh/fishtown-analytics/tap-s3-csv) [![Code Climate](https://codeclimate.com/github/fishtown-analytics/tap-s3-csv/badges/gpa.svg)](https://codeclimate.com/github/fishtown-analytics/tap-s3-csv)
+Singer tap to pull data from a Google Cloud Storage bucket.
+
+Maintainer: FIXD Automotive
+Forked from [Fishtown's `tap-s3-csv`](https://github.com/dbt-labs/tap-s3-csv)
 
 [Singer](singer.io) tap that produces JSON-formatted data following
 the [Singer spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
 
 Given a configuration that specifies a bucket, a file pattern to match, a file format (`csv` or `excel`),
-and a table name, this tap reads new files from S3, parses them, infers a schema, and outputs the data
+and a table name, this tap reads new files from Google Cloud Storage, parses them, infers a schema, and outputs the data
 according to the Singer spec.
 
 ### Installation
@@ -21,7 +23,7 @@ python setup.py install
 Now you can run:
 
 ```
-tap-s3-csv --config configuration.json
+tap-gcs-csv --config config.json
 ```
 
 to generate data.
@@ -30,7 +32,7 @@ to generate data.
 
 This tap:
 
- - Searches S3 for files matching the spec given.
+ - Searches GCS for files matching the spec given.
  - Samples 1000 records out of the first five files found to infer datatypes.
  - Iterates through files from least recently modified to most recently modified, outputting data according
    to the generated schema & Singer spec.
@@ -38,7 +40,7 @@ This tap:
 
 ### Example
 
-Given a source file: `s3://csv-bucket/csv-exports/today.csv`
+Given a source file: `gs://csv-bucket/csv-exports/today.csv`
 
 ```csv
 id,First Name, Last Name
@@ -51,8 +53,7 @@ And a config file:
 
 ```json
 {
-    "aws_access_key_id": "YOUR_ACCESS_KEY_ID",
-    "aws_secret_access_key": "YOUR_SECRET_ACCESS_KEY",
+    "credentials_path": "./client_secret.json",
     "start_date": "2017-05-01T00:00:00Z",
     "bucket": "csv-bucket",
     "tables": [
@@ -73,10 +74,10 @@ An output record might look like:
   "id": 3,
   "first_name": "Tobias",
   "last_name": "Funke",
-  "_s3_source_bucket": "csv-bucket",
-  "_s3_source_file": "csv-exports/today.csv",
-  "_s3_source_lineno": 4,
-  "_s3_extra": null
+  "_gcs_source_bucket": "csv-bucket",
+  "_gcs_source_file": "csv-exports/today.csv",
+  "_gcs_source_lineno": 4,
+  "_gcs_extra": null
 }
 ```
 
@@ -85,7 +86,7 @@ An output record might look like:
 - Input files MUST have a header row.
 - Input files MUST have cells fully populated. Missing cells will break the integration. Empty cells
   are handled by the tap.
-- If you have the choice, use CSV, not Excel. This tap is able to stream CSV files from S3 row-by-row,
+- If you have the choice, use CSV, not Excel. This tap is able to stream CSV files from GCS row-by-row,
   but it cannot stream Excel files. CSV files are more efficient and more reliable.
 - This tap can convert datetimes, but it does not infer date-time as an output datatype. If you want
   the tap to convert a field to datetime, you must specify `date-time` as the `_conversion_type` in
@@ -97,10 +98,9 @@ See below for an exhaustive list of configuration fields:
 
 ```javascript
 {
-    // your AWS credentials go here.
-    "aws_access_key_id": "YOUR_ACCESS_KEY_ID",
-    "aws_secret_access_key": "YOUR_SECRET_ACCESS_KEY",
-
+    // A path to a JSON credentials file for a service account that
+    // has access to read from the bucket. 
+    "credentials_path": "/path/to/client_secret.json",
     // the start date to use on the first run. the tap outputs an updated state on each
     // run which you can use going forward for incremental replication
     "start_date": "2017-05-01T00:00:00Z",
@@ -116,7 +116,7 @@ See below for an exhaustive list of configuration fields:
             // table name to output
             "name": "bluths_from_csv",
 
-            // you can limit the paths searched in s3 if there are many files in your
+            // you can limit the paths searched in gcs if there are many files in your
             // bucket
             "search_prefix": "csv-exports",
 
@@ -124,7 +124,7 @@ See below for an exhaustive list of configuration fields:
             "pattern": "csv-exports/(.*)\\.csv$",
 
             // primary key for this table. if append only, use:
-            //   ["_s3_source_file", "_s3_source_lineno"]
+            //   ["_gcs_source_file", "_gcs_source_lineno"]
             "key_properties": ["id"],
 
             // format, either "csv" or "excel"
@@ -172,7 +172,7 @@ See below for an exhaustive list of configuration fields:
 - Column names have whitespace removed and replaced with underscores.
 - They are also downcased.
 - A few extra fields are added for help with auditing:
-  - `_s3_source_bucket`: The bucket that this record came from
-  - `_s3_source_file`: The path to the file that this record came from
-  - `_s3_source_lineno`: The line number in the source file that this record was found on
-  - `_s3_extra`: If you specify field names in the config, and there are more records in a row than field names, the overflow will end up here.
+  - `_gcs_source_bucket`: The bucket that this record came from
+  - `_gcs_source_file`: The path to the file that this record came from
+  - `_gcs_source_lineno`: The line number in the source file that this record was found on
+  - `_gcs_extra`: If you specify field names in the config, and there are more records in a row than field names, the overflow will end up here.
