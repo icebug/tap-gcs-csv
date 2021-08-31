@@ -1,5 +1,6 @@
 import re
 import io
+from contextlib import contextmanager
 
 from google.cloud import storage
 from google.oauth2 import service_account
@@ -8,6 +9,7 @@ import tap_s3_csv.excel_handler
 from tap_s3_csv.logger import LOGGER as logger
 
 import tap_gcs_csv.csv_handler
+from tap_gcs_csv.compression import decompress
 
 def create_client(config):
     credentials = service_account.Credentials.from_service_account_file(
@@ -16,16 +18,20 @@ def create_client(config):
     )
     return storage.Client(credentials=credentials)
 
-def get_row_iterator(config, table_spec, blob):
-    
-    if table_spec['format'] == 'csv':
-        file_handle = blob.open(mode='rt', encoding=table_spec.get('encoding', 'utf-8'))
-        return tap_gcs_csv.csv_handler.get_row_iterator(table_spec, file_handle)
+def row_iterator(config, table_spec, blob):
+    compression = table_spec.get('compression', 'none')
+    with blob.open(mode='rb') as bin:
+        with decompress(compression, bin) as uncompressed:
+            iterator = None
 
-    elif table_spec['format'] == 'excel':
-        file_handle = blob.open(mode='rb')
-        return tap_s3_csv.excel_handler.get_row_iterator(table_spec, file_handle)
+            if table_spec['format'] == 'csv':
+                iterator = tap_gcs_csv.csv_handler.get_row_iterator(table_spec, uncompressed)
 
+            elif table_spec['format'] == 'excel':
+                iterator = tap_s3_csv.excel_handler.get_row_iterator(table_spec, uncompressed)
+
+            for row in iterator:
+                yield row
 
 def sample_files(config, table_spec):
     sample_rate = config.get('sample_rate', 10)
@@ -36,9 +42,7 @@ def sample_files(config, table_spec):
         logger.info('Sampling {} ({} records, every {}th record).'
                     .format(blob.name, max_records, sample_rate))
 
-        iterator = get_row_iterator(config, table_spec, blob)
-
-        for i, row in enumerate(iterator):
+        for i, row in enumerate(row_iterator(config, table_spec, blob)):
             if (i % sample_rate) == 0:
                 yield row
                 samples += 1

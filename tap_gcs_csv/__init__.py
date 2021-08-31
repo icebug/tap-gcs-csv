@@ -46,12 +46,14 @@ def sync_table(config, state, table_spec):
     singer.write_schema(table_name, schema, key_properties=table_spec['key_properties'])
 
     records_streamed = 0
+    greatest_last_updated = last_updated
     for blob in gcs.get_files_for_table(config, table_spec, last_updated=last_updated):
         records_streamed += sync_table_file(config, blob, table_spec, schema)
 
-        if blob.updated:
+        if blob.updated and blob.updated > greatest_last_updated:
+            greatest_last_updated = blob.updated
             state[table_name] = {
-                'last_updated': blob.updated.isoformat()
+                'last_updated': greatest_last_updated.isoformat()
             }
             singer.write_state(state)
 
@@ -63,11 +65,9 @@ def sync_table(config, state, table_spec):
 def sync_table_file(config, blob, table_spec, schema):
     logger.info('Syncing file "{}".'.format(blob.name))
 
-    iterator = gcs.get_row_iterator(config, table_spec, blob)
-
     records_synced = 0
 
-    for row in iterator:
+    for row in gcs.row_iterator(config, table_spec, blob):
         metadata = {
             '_gcs_source_bucket': blob.bucket.name,
             '_gcs_source_file': blob.name,
