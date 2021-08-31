@@ -105,7 +105,7 @@ See below for an exhaustive list of configuration fields:
     // run which you can use going forward for incremental replication
     "start_date": "2017-05-01T00:00:00Z",
 
-    // the bucket to use. make sure the AWS credentials provided have read access.
+    // the bucket to use. make sure the service account credentials provided have read access.
     "bucket": "csv-bucket",
 
     // table definitions. you can specify multiple tables to be pulled from a given
