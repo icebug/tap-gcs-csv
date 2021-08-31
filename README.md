@@ -130,6 +130,12 @@ See below for an exhaustive list of configuration fields:
             // format, either "csv" or "excel"
             "format": "csv",
 
+            // override the encoding for text file formats like "csv"
+            "encoding": "utf-8",
+
+            // decompress the file, either "none" or "zip"
+            "compression": "none",
+
             // if the files don't have a header row, you can specify the field names
             "field_names": ["id", "first_name", "last_name"],
 
