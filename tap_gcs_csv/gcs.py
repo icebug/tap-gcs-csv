@@ -31,13 +31,13 @@ def sample_files(config, table_spec):
     sample_rate = config.get('sample_rate', 10)
     max_records = config.get('max_records', 1000)
     max_files = config.get('max_files', 5)
+    samples = 0
     for blob in get_files_for_table(config, table_spec, max_results=max_files):
         logger.info('Sampling {} ({} records, every {}th record).'
                     .format(blob.name, max_records, sample_rate))
 
         iterator = get_row_iterator(config, table_spec, blob)
 
-        samples = 0
         for i, row in enumerate(iterator):
             if (i % sample_rate) == 0:
                 yield row
