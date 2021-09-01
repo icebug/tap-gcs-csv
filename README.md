@@ -3,7 +3,8 @@
 Singer tap to pull data from a Google Cloud Storage bucket.
 
 Maintainer: FIXD Automotive
-Forked from [Fishtown's `tap-s3-csv`](https://github.com/dbt-labs/tap-s3-csv)
+
+Originally forked from [Fishtown's `tap-s3-csv`](https://github.com/dbt-labs/tap-s3-csv)
 
 [Singer](singer.io) tap that produces JSON-formatted data following
 the [Singer spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
