@@ -13,8 +13,14 @@ from tap_gcs_csv.compression import decompress
 
 LOGGER = singer.get_logger()
 
+LEGAL_CHARS = re.compile('[^a-z0-9_]')
+STARTS_WITH_NUM = re.compile('^[0-9]')
+
 def sanitize_key(key):
-    return inflection.underscore(key.replace(' ', '_'))
+    key = re.sub(LEGAL_CHARS, '_', inflection.underscore(key))
+    if re.match(STARTS_WITH_NUM, key):
+        key = '_' + key
+    return key
 
 def create_client(config):
     credentials = service_account.Credentials.from_service_account_file(
