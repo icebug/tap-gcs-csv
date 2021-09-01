@@ -51,6 +51,11 @@ def sync_table(config, state, stream):
         config['start_date']
     )
     schema = stream.schema.to_dict()
+    mdata = singer.metadata.to_map(stream.metadata)
+    conversions = {
+        key: singer.metadata.get(mdata, ('properties', key), 'conversion_type')
+        for key in stream.schema.properties.keys()
+    }
 
     LOGGER.info('Syncing table "{}".'.format(stream.tap_stream_id))
     LOGGER.info('Getting files modified since {}.'.format(last_updated))
@@ -59,7 +64,7 @@ def sync_table(config, state, stream):
 
     records_streamed = 0
     greatest_last_updated = last_updated
-    table_spec = singer.metadata.to_map(stream.metadata)[()]
+    table_spec = mdata[()]
     for blob in gcs.get_files_for_table(config, table_spec, last_updated=last_updated):
         LOGGER.info('Syncing file "{}".'.format(blob.name))
 
@@ -71,7 +76,7 @@ def sync_table(config, state, stream):
                 '_gcs_source_lineno': row_id + 2
             }
 
-            record = {**conversion.convert_row(row, schema), **metadata}
+            record = {**conversion.convert_row(row, schema, conversions), **metadata}
             singer.write_record(stream.tap_stream_id, record)
             records_streamed += 1
 

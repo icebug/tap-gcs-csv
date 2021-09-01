@@ -4,12 +4,11 @@ import singer
 
 LOGGER = singer.get_logger()
 
-def convert_row(row, schema):
+def convert_row(row, schema, conversions):
     to_return = {}
 
     for key, value in row.items():
-        field_schema = schema['properties'][key]
-        datatype = field_schema.get('_conversion_type', 'string')
+        datatype = conversions.get(key) or 'string'
 
         LOGGER.debug('Converting {} value {} to {}'.format(
             key, value, datatype))
