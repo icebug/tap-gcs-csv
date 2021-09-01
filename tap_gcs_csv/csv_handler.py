@@ -1,8 +1,6 @@
 import codecs
 import csv
 
-from tap_s3_csv.csv_handler import generator_wrapper
-
 def get_row_iterator(table_spec, file_handle):
     encoding = table_spec.get('encoding', 'utf-8')
     field_names = None

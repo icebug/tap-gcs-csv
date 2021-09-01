@@ -1,7 +1,9 @@
 import json
+import singer
 
-from tap_s3_csv.logger import LOGGER as logger
 from voluptuous import Schema, Required, Any, Optional
+
+LOGGER = singer.get_logger()
 
 CONFIG_CONTRACT = Schema({
     Required('credentials_path'): str,
@@ -37,7 +39,7 @@ def load(filename):
         with open(filename) as handle:
             config = json.load(handle)
     except:
-        logger.fatal("Failed to decode config file. Is it valid json?")
+        LOGGER.fatal("Failed to decode config file. Is it valid json?")
         raise RuntimeError
 
     CONFIG_CONTRACT(config)

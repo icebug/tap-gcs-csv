@@ -3,16 +3,30 @@ import dateutil
 import json
 import singer
 
-from tap_s3_csv.logger import LOGGER as logger
-from tap_s3_csv import merge_dicts, load_state
-import tap_s3_csv.conversion as conversion
+import tap_gcs_csv.conversion as conversion
 
 import tap_gcs_csv.config
 import tap_gcs_csv.gcs
 
+LOGGER = singer.get_logger()
+
+def merge_dicts(first, second):
+    to_return = first.copy()
+
+    for key in second:
+        if key in first:
+            if isinstance(first[key], dict) and isinstance(second[key], dict):
+                to_return[key] = merge_dicts(first[key], second[key])
+            else:
+                to_return[key] = second[key]
+
+        else:
+            to_return[key] = second[key]
+
+    return to_return
 
 def get_sampled_schema_for_table(config, table_spec):
-    logger.info('Sampling records to determine table schema.')
+    LOGGER.info('Sampling records to determine table schema.')
 
     samples = [row for row in gcs.sample_files(config, table_spec)]
     data_schema = conversion.generate_schema(samples)
@@ -36,8 +50,8 @@ def sync_table(config, state, table_spec):
         config['start_date']
     )
 
-    logger.info('Syncing table "{}".'.format(table_name))
-    logger.info('Getting files modified since {}.'.format(last_updated))
+    LOGGER.info('Syncing table "{}".'.format(table_name))
+    LOGGER.info('Getting files modified since {}.'.format(last_updated))
 
     inferred_schema = get_sampled_schema_for_table(config, table_spec)
     override_schema = {'properties': table_spec.get('schema_overrides', {})}
@@ -57,13 +71,13 @@ def sync_table(config, state, table_spec):
             }
             singer.write_state(state)
 
-    logger.info('Wrote {} records for table "{}".'.format(records_streamed, table_name))
+    LOGGER.info('Wrote {} records for table "{}".'.format(records_streamed, table_name))
 
     return state
 
 
 def sync_table_file(config, blob, table_spec, schema):
-    logger.info('Syncing file "{}".'.format(blob.name))
+    LOGGER.info('Syncing file "{}".'.format(blob.name))
 
     records_synced = 0
 
@@ -81,9 +95,23 @@ def sync_table_file(config, blob, table_spec, schema):
 
     return records_synced
 
+def load_state(filename):
+    state = {}
+
+    if filename is None:
+        return state
+
+    try:
+        with open(filename) as handle:
+            state = json.load(handle)
+    except:
+        logger.fatal("Failed to decode state file. Is it valid json?")
+        raise RuntimeError
+
+    return state
 
 def do_sync(args):
-    logger.info('Starting sync.')
+    LOGGER.info('Starting sync.')
 
     config = tap_gcs_csv.config.load(args.config)
     state = load_state(args.state)
@@ -91,7 +119,7 @@ def do_sync(args):
     for table in config['tables']:
         state = sync_table(config, state, table)
 
-    logger.info('Done syncing.')
+    LOGGER.info('Done syncing.')
 
 
 def main():
@@ -107,7 +135,7 @@ def main():
     try:
         do_sync(args)
     except RuntimeError:
-        logger.fatal("Run failed.")
+        LOGGER.fatal("Run failed.")
         exit(1)
 
 
