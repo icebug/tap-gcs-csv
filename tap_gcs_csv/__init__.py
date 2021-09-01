@@ -160,12 +160,8 @@ def main():
             catalog = args.catalog
         else:
             catalog = discover(args.config)
-    try:
-        do_sync(args.config, args.state, catalog)
-    except RuntimeError:
-        LOGGER.fatal("Run failed.")
-        exit(1)
 
+        do_sync(args.config, args.state, catalog)
 
 if __name__ == '__main__':
     main()

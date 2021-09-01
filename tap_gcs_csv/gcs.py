@@ -55,6 +55,10 @@ def sample_files(config, table_spec):
             if samples >= max_records:
                 break
 
+    if samples == 0:
+        LOGGER.fatal("Unable to sample table '{}' as no files were found or there were fewer than {} rows. Check your pattern or turn down the sample_rate.".format(table_spec['pattern'], sample_rate))
+        exit(1)
+
     LOGGER.info('Sampled {} records.'.format(samples))
 
 
