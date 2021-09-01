@@ -1,9 +1,4 @@
-import json
-import singer
-
 from voluptuous import Schema, Required, Any, Optional
-
-LOGGER = singer.get_logger()
 
 CONFIG_CONTRACT = Schema({
     Required('credentials_path'): str,
@@ -30,18 +25,3 @@ CONFIG_CONTRACT = Schema({
         }
     }]
 })
-
-
-def load(filename):
-    config = {}
-
-    try:
-        with open(filename) as handle:
-            config = json.load(handle)
-    except:
-        LOGGER.fatal("Failed to decode config file. Is it valid json?")
-        raise RuntimeError
-
-    CONFIG_CONTRACT(config)
-
-    return config
