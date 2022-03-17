@@ -35,13 +35,17 @@ def create_client(config):
 
 def row_iterator(config, table_spec, blob):
     compression = table_spec.get("compression", "none")
+    if "delimiter" in blob.metadata:
+        delimiter = blob.metadata["delimiter"]
+    else:
+        delimiter = None
     with blob.open(mode="rb") as bin:
         with decompress(compression, bin) as uncompressed:
             iterator = None
 
             if table_spec["format"] == "csv":
                 iterator = tap_gcs_csv.csv_handler.get_row_iterator(
-                    table_spec, uncompressed
+                    table_spec, uncompressed, delimiter
                 )
 
             elif table_spec["format"] == "excel":
