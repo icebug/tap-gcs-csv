@@ -11,6 +11,7 @@ from google.oauth2 import service_account
 import tap_gcs_csv.excel_handler
 import tap_gcs_csv.csv_handler
 from tap_gcs_csv.compression import decompress
+from tap_gcs_csv.distributor_forecasts_handler import forecasts_handler
 
 LOGGER = singer.get_logger()
 
@@ -53,12 +54,21 @@ def row_iterator(config, table_spec, blob):
                     table_spec, uncompressed
                 )
 
-            for row in iterator:
-                row["author"] = blob.metadata["author"]
-                row["file_name"] = blob.metadata["filename"]
-                row["file_date"] = blob.metadata["uploaded_at"]
-                row["extraction_date"] = datetime.datetime.now().isoformat()
-                yield {sanitize_key(k): v for k, v in row.items()}
+            if blob.metadata["table"] == "distributor_forecasts":
+                for row in forecasts_handler(iterator, blob, table_spec):
+                    row["author"] = blob.metadata["author"]
+                    row["file_name"] = blob.metadata["filename"]
+                    row["file_date"] = blob.metadata["uploaded_at"]
+                    row["season"] = blob.metadata["season"]
+                    row["extraction_date"] = datetime.datetime.now().isoformat()
+                    yield {sanitize_key(k): v for k, v in row.items()}
+            else:
+                for row in iterator:
+                    row["author"] = blob.metadata["author"]
+                    row["file_name"] = blob.metadata["filename"]
+                    row["file_date"] = blob.metadata["uploaded_at"]
+                    row["extraction_date"] = datetime.datetime.now().isoformat()
+                    yield {sanitize_key(k): v for k, v in row.items()}
 
 
 def sample_files(config, table_spec):
