@@ -55,7 +55,7 @@ def row_iterator(config, table_spec, blob):
                 )
 
             if blob.metadata["table"] == "distributor_forecasts":
-                for row in forecasts_handler(iterator, blob, table_spec):
+                for row in forecasts_handler(iterator):
                     row["author"] = blob.metadata["author"]
                     row["file_name"] = blob.metadata["filename"]
                     row["file_date"] = blob.metadata["uploaded_at"]
