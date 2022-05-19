@@ -53,21 +53,21 @@ def row_iterator(config, table_spec, blob):
                 iterator = tap_gcs_csv.excel_handler.get_row_iterator(
                     table_spec, uncompressed
                 )
-
+            extraction_time = datetime.datetime.now().isoformat()
             if blob.metadata["table"] == "distributor_forecasts":
                 for row in forecasts_handler(iterator):
                     row["author"] = blob.metadata["author"]
                     row["file_name"] = blob.metadata["filename"]
                     row["file_date"] = blob.metadata["uploaded_at"]
                     row["season"] = blob.metadata["season"]
-                    row["extraction_date"] = datetime.datetime.now().isoformat()
+                    row["extraction_date"] = extraction_time
                     yield {sanitize_key(k): v for k, v in row.items()}
             else:
                 for row in iterator:
                     row["author"] = blob.metadata["author"]
                     row["file_name"] = blob.metadata["filename"]
                     row["file_date"] = blob.metadata["uploaded_at"]
-                    row["extraction_date"] = datetime.datetime.now().isoformat()
+                    row["extraction_date"] = extraction_time
                     yield {sanitize_key(k): v for k, v in row.items()}
 
 
