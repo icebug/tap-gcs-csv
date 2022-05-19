@@ -29,14 +29,10 @@ def forecasts_handler(iterator):
             continue
         else:
             for col in RELEVANT_COLUMNS:
-                row[col] = float(
-                    row[col]
-                    .replace(" ", "")
-                    .replace("#REF!", "")
-                    .replace("#N/A", "")
-                    .replace("-", "")
-                    .replace("", "0")
-                )
+                try:
+                    row[col] = int(row[col].replace(" ", ""))
+                except:
+                    row[col] = 0
                 yield {
                     "Article_number": row["Article number "],
                     "Distribution_ID": col,
