@@ -25,7 +25,7 @@ RELEVANT_COLUMNS = [
 
 def forecasts_handler(iterator):
     for row in iterator:
-        if row["ROW in CL"] == "":
+        if row["Article number "] == "":
             continue
         else:
             for col in RELEVANT_COLUMNS:
