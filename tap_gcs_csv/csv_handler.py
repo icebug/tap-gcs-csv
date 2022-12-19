@@ -40,10 +40,10 @@ def get_row_iterator(table_spec, file_handle, delimiter=None):
             ):
                 for k, v in ROW_CLEAN_UP_DICT["open_sales"].items():
                     row[v] = row.pop(k)
-                if row["Article"] != None:
-                    ARTICLE = row["Article"]
-                else:
+                if row["Article"] == None or row["Article"] == "":
                     row["Article"] = ARTICLE
+                else:
+                    ARTICLE = row["Article"]
                 yield row
 
         elif "sales" in table_spec["pattern"]:
@@ -53,10 +53,10 @@ def get_row_iterator(table_spec, file_handle, delimiter=None):
             ):
                 for k, v in ROW_CLEAN_UP_DICT["sales"].items():
                     row[v] = row.pop(k)
-                if row["Customer"] != None:
-                    CUSTOMER = row["Customer"]
-                else:
+                if row["Customer"] == None or row["Customer"] == "":
                     row["Customer"] = CUSTOMER
+                else:
+                    CUSTOMER = row["Customer"]
                 yield row
 
         else:
