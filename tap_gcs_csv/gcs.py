@@ -36,7 +36,7 @@ def create_client(config):
 
 def row_iterator(config, table_spec, blob):
     compression = table_spec.get("compression", "none")
-    if "delimiter" in blob.metadata:
+    if blob.metadata and "delimiter" in blob.metadata:
         delimiter = blob.metadata["delimiter"]
     else:
         delimiter = None
@@ -53,6 +53,10 @@ def row_iterator(config, table_spec, blob):
                 iterator = tap_gcs_csv.excel_handler.get_row_iterator(
                     table_spec, uncompressed
                 )
+
+            ## Add error handling
+            ## Fix stupid if-else below with duplicated work and strange process
+
             extraction_time = datetime.datetime.now().isoformat()
             if blob.metadata["table"] == "distributor_forecasts":
                 for row in forecasts_handler(iterator):
@@ -105,7 +109,6 @@ def sample_files(config, table_spec):
 def get_files_for_table(config, table_spec, max_results=None, last_updated=None):
     client = create_client(config)
     bucket = client.get_bucket(config["bucket"])
-
     pattern = table_spec["pattern"]
     matcher = re.compile(pattern)
     prefix = table_spec.get("search_prefix") or re.match(r"[^\(\[\.]+", pattern).group(
@@ -114,8 +117,12 @@ def get_files_for_table(config, table_spec, max_results=None, last_updated=None)
     LOGGER.debug(
         'Checking bucket "{}" for keys matching "{}"'.format(bucket.name, pattern)
     )
+
     for blob in client.list_blobs(bucket, max_results=max_results, prefix=prefix):
         if matcher.search(blob.name) and (
-            last_updated is None or blob.updated is None or blob.updated > last_updated
+            last_updated is None
+            or blob.updated is None
+            or blob.updated > last_updated
+            and (".CSV" in blob.name or ".csv" in blob.name)
         ):
             yield blob
